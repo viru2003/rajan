@@ -1,0 +1,107 @@
+-- Create Tables
+CREATE TABLE department (
+    dept_name VARCHAR(255) PRIMARY KEY,
+    building VARCHAR(255),
+    budget DECIMAL(10, 2) NOT NULL CHECK (budget IS NOT NULL)
+);
+
+CREATE TABLE course (
+    course_id VARCHAR(255) PRIMARY KEY,
+    title VARCHAR(255),
+    dept_name VARCHAR(255),
+    credits INT,
+    FOREIGN KEY (dept_name) REFERENCES department(dept_name)
+);
+
+CREATE TABLE instructor (
+    ID INT PRIMARY KEY,
+    name VARCHAR(255),
+    dept_name VARCHAR(255),
+    salary DECIMAL(10, 2) NOT NULL CHECK (salary IS NOT NULL),
+    FOREIGN KEY (dept_name) REFERENCES department(dept_name)
+);
+
+CREATE TABLE section (
+    course_id VARCHAR(255),
+    sec_id INT,
+    semester VARCHAR(255),
+    year INT,
+    building VARCHAR(255),
+    room_number INT,
+    time_slot_id INT,
+    PRIMARY KEY (course_id, sec_id, semester, year),
+    FOREIGN KEY (course_id) REFERENCES course(course_id)
+);
+
+CREATE TABLE teaches (
+    ID INT,
+    course_id VARCHAR(255),
+    sec_id INT,
+    semester VARCHAR(255),
+    year INT,
+    PRIMARY KEY (ID, course_id, sec_id, semester, year),
+    FOREIGN KEY (ID) REFERENCES instructor(ID),
+    FOREIGN KEY (course_id, sec_id, semester, year) REFERENCES section(course_id, sec_id, semester, year)
+);
+
+-- Data Insertion: Insert your sample data here.
+
+-- Find the titles of courses in the Comp. Sci. department that have 3 credits:
+SELECT title
+FROM course
+WHERE dept_name = 'Comp. Sci.' AND credits = 3;
+
+-- Display the dept names whose courses are conducted in 'A' Building:
+SELECT DISTINCT dept_name
+FROM section
+WHERE building = 'A';
+
+-- Find the name of the instructor who is conducting a course having the maximum credits:
+SELECT i.name
+FROM instructor i
+JOIN teaches t ON i.ID = t.ID
+JOIN section s ON t.course_id = s.course_id AND t.sec_id = s.sec_id
+WHERE s.credits = (SELECT MAX(credits) FROM course);
+
+-- Left Outer Join
+SELECT *
+FROM instructor
+LEFT JOIN teaches ON instructor.ID = teaches.ID;
+
+-- Right Outer Join
+SELECT *
+FROM instructor
+RIGHT JOIN teaches ON instructor.ID = teaches.ID;
+
+-- Full Join
+SELECT *
+FROM instructor
+FULL JOIN teaches ON instructor.ID = teaches.ID;
+
+-- Create a view of instructors with their dept name and courses conducted by them:
+CREATE VIEW instructor_courses_view AS
+SELECT i.ID, i.name, i.dept_name, t.course_id, t.sec_id, t.semester, t.year
+FROM instructor i
+JOIN teaches t ON i.ID = t.ID;
+
+-- Find all instructors earning the highest salary:
+SELECT *
+FROM instructor
+WHERE salary = (SELECT MAX(salary) FROM instructor);
+
+-- Display course title which includes 'computer' keyword:
+SELECT title
+FROM course
+WHERE LOWER(title) LIKE '%computer%';
+
+-- Display departments with a total budget greater than 25:
+SELECT dept_name
+FROM department d
+JOIN course c ON d.dept_name = c.dept_name
+GROUP BY dept_name
+HAVING SUM(credits) > 25;
+
+-- Display departments with a descending order of budget:
+SELECT *
+FROM department
+ORDER BY budget DESC;
